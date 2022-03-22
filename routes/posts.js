@@ -1,14 +1,10 @@
 const router = require("express").Router();
+const verify = require('./verifyToken');
+const User = require('../model/User');
 
-router.get("/", (req, res) => {
-  res
-    .json({
-      posts: {
-        title: "my first post",
-        description: "random data you shouldnt access",
-      },
-    })
-    .status(201);
+router.get("/", verify, (req, res) => {
+  res.send(req.user);
+  User.findbyOne({_id: req.user});
 });
 
 module.exports = router;
