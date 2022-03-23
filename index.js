@@ -20,5 +20,7 @@ app.use(express.json());
 app.use('/api/user', authRoute);
 app.use('/api/posts', postRoute);
 
-app.listen(3000, () => console.log('Server up and running')); // escuchando el puerto 
+const PORT = process.env.PORT || 3000
+
+app.listen(PORT, () => console.log('Server up and running')); // escuchando el puerto 
 
