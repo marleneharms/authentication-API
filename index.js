@@ -22,5 +22,6 @@ app.use('/api/posts', postRoute);
 
 const PORT = process.env.PORT || 3000
 
-app.listen(PORT, () => console.log('Server up and running')); // escuchando el puerto 
+// puerto donde se hará deploy y conexiones de donde va a aceptar conexiones
+app.listen(PORT, "0.0.0.0", () => console.log('Server up and running')); // escuchando el puerto 
 
