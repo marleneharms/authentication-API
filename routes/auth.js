@@ -6,6 +6,8 @@ const User = require("../model/User");
 const jwt = require("jsonwebtoken");
 const { registerValidation, loginValidation } = require("../validation");
 
+let refreshTokens = [];
+
 router.post("/register", async (req, res) => {
   //validate data before we create a new user
   const { error } = registerValidation(req.body);
@@ -62,13 +64,58 @@ router.post("/login", async (req, res) => {
   if (!validPass) return res.status(400).json({ msg: "Invalid password" });
 
   //create and assign a token
-  const token = jwt.sign({ _id: user._id }, process.env.TOKEN_SECRET, {
-    expiresIn: "15m",
-  });
-  res
-    .header("auth-token", token)
-    .json({ token: token, msg: "Logged in successfully" });
+  const accessToken = jwt.sign(
+    { _id: user._id, name: user.name, email: user.email },
+    process.env.TOKEN_SECRET,
+    {
+      expiresIn: "15m",
+    }
+  );
+
+  //refresh token
+  const refreshToken = jwt.sign(
+    { _id: user._id, name: user.name, email: user.email },
+    process.env.REFRESH_TOKEN_SECRET,
+    {
+      expiresIn: "7d",
+    }
+  );
+
+  refreshTokens.push(refreshToken);
+
+  console.log(refreshTokens);
+
+
+  res.json({ accessToken, refreshToken, msg: "Logged in successfully" });
   //res.send('Logzed in!');
+});
+
+
+// create new access token from refres access token
+router.post("/token", async (req, res) => {
+  const refreshToken = req.header("auth-token");
+
+  if (!refreshToken) return res.status(401).send("Token is not provided");
+
+  if (!refreshTokens.includes(refreshToken)) {
+    res.status(403).json({ msg: "Refresh token is not valid" });
+  }
+
+  try{
+     const user = await jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+     // user = { _id: user._id, name: user.name, email: user.email };
+     const {_id, email, name} = user;
+     const accessToken = await jwt.sign(
+        { _id, name, email },
+        process.env.TOKEN_SECRET,
+        {
+          expiresIn: "15m",
+        }
+      );
+      res.json({ accessToken });
+  } catch (err) {
+    res.status(400).json({ msg: "Invalid token" });
+  }
 });
 
 module.exports = router; // usarlo fuera de auth
