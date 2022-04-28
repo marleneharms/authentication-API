@@ -85,11 +85,9 @@ router.post("/login", async (req, res) => {
 
   console.log(refreshTokens);
 
-
   res.json({ accessToken, refreshToken, msg: "Logged in successfully" });
   //res.send('Logzed in!');
 });
-
 
 // create new access token from refres access token
 router.post("/token", async (req, res) => {
@@ -101,21 +99,32 @@ router.post("/token", async (req, res) => {
     res.status(403).json({ msg: "Refresh token is not valid" });
   }
 
-  try{
-     const user = await jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
-     // user = { _id: user._id, name: user.name, email: user.email };
-     const {_id, email, name} = user;
-     const accessToken = await jwt.sign(
-        { _id, name, email },
-        process.env.TOKEN_SECRET,
-        {
-          expiresIn: "15m",
-        }
-      );
-      res.json({ accessToken });
+  try {
+    const user = await jwt.verify(
+      refreshToken,
+      process.env.REFRESH_TOKEN_SECRET
+    );
+    // user = { _id: user._id, name: user.name, email: user.email };
+    const { _id, email, name } = user;
+    const accessToken = await jwt.sign(
+      { _id, name, email },
+      process.env.TOKEN_SECRET,
+      {
+        expiresIn: "15m",
+      }
+    );
+    res.json({ accessToken });
   } catch (err) {
     res.status(400).json({ msg: "Invalid token" });
   }
+});
+
+// Delete refresh token
+router.delete("/logout", async (req, res) => {
+  const refreshToken = req.header("auth-token"); // get refresh token from header
+
+  refreshTokens = refreshTokens.filter((token) => token !== refreshToken); // remove the token from the array
+  res.json({ msg: "Refresh token deleted" }).status(204); // send a response with status code 204
 });
 
 module.exports = router; // usarlo fuera de auth
