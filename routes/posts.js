@@ -1,53 +1,73 @@
 const router = require("express").Router();
 const verify = require("./verifyToken");
 const User = require("../model/User");
+const Anime = require("../model/Anime");
 
-const publicAnimeList = [
-  {
-    id: 1,
-    title: "Naruto",
-    watched: false,
-  },
-  {
-    id: 2,
-    title: "Attack on Titan",
-    watched: false,
-  },
-  {
-    id: 3,
-    title: "The Promised Neverland",
-    watched: false,
-  },
-  {
-    id: 4,
-    title: "Fullmetal Alchemist",
-    watched: false,
-  },
-  {
-    id: 5,
-    title: "One Piece",
-    watched: false,
-  },
-  {
-    id: 6,
-    title: "One Punch",
-  },
-];
+router.get("/animelist", verify, async (req, res) => {
+  try {
+    const user = await User.findOne({ _id: req.user._id });
 
-const privateAnimeList = [
-  {
-    id: 1,
-    title: "Death Note",
-    watched: false,
-  },
-];
+    if (!user) {
+      res.status(400).json({ msg: "User not found" });
+    }
 
-router.get("/private", verify, (req, res) => {
-  res.json(privateAnimeList);
+    res.json(user.animeList).status(200);
+  } catch (err) {
+    res.status(400).json({ msg: err.message });
+  }
 });
 
-router.get("/public", (req, res) => {
-  res.json(publicAnimeList);
+router.post("/animelist", verify, async (req, res) => {
+  try {
+    const user = await User.findOne({ _id: req.user._id });
+
+    if (!user) {
+      res.status(400).json({ msg: "User not found" });
+    }
+
+    const tmpAnime = new Anime({
+      title: req.body.title,
+      genre: req.body.genre,
+      imgURL: req.body.imgURL,
+      watched: req.body.watched,
+    });
+
+    user.animeList.push(tmpAnime);
+    await user.save();
+
+    res.json(tmpAnime).status(200);
+  } catch (err) {
+    res.status(400).json({ msg: err.message });
+  }
+});
+
+router.put("/animelist/", verify, async (req, res) => {
+  const animeID = req.header("anime-id");
+
+  try {
+    // Change the watched status of the anime inside the user's anime list
+    await User.updateOne(
+      { _id: req.user._id, "animeList._id": animeID },
+      { $set: { "animeList.$.watched": req.body.watched } }
+    );
+    res.json({msg:"Anime watched status changed"}).status(200);
+  } catch (error) {
+    res.status(400).json({ msg: error.message });
+  }
+});
+
+router.delete("/animelist", verify, async (req, res) => {
+  const animeID = req.header("anime-id");
+
+  try {
+    await User.updateOne(
+      { _id: req.user._id },
+      { $pull: { animeList: { _id: animeID } } }
+    );
+    return res.status(200).json({ msg: "Anime removed" });
+  } catch (err) {
+    res.status(400).json({ msg: err.message });
+  }
 });
 
 module.exports = router;

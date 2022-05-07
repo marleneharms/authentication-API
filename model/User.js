@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const Anime = require("../model/Anime");
 
 const userSchema = new mongoose.Schema({
   name: {
@@ -21,7 +22,8 @@ const userSchema = new mongoose.Schema({
   date: {
     type: Date,
     default: Date.now,
-  }
+  },
+  animeList: [Anime.schema],
 });
 
 module.exports = mongoose.model("User", userSchema);

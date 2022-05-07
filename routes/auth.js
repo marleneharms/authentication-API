@@ -3,6 +3,7 @@ const bcrypt = require("bcryptjs");
 const express = require("express");
 const router = express.Router();
 const User = require("../model/User");
+const Anime = require("../model/Anime");
 const jwt = require("jsonwebtoken");
 const { registerValidation, loginValidation } = require("../validation");
 
@@ -21,11 +22,20 @@ router.post("/register", async (req, res) => {
   const salt = await bcrypt.genSalt(10);
   const hashedPassword = await bcrypt.hash(req.body.password, salt);
 
+  const tmpAnime = new Anime({
+    title: "Death Note",
+    genre: "Action",
+    imgURL:
+      "https://tierragamer.com/wp-content/uploads/2019/07/Death-Note-Personajes.jpg",
+    watched: false,
+  });
+
   //create new user
   const user = new User({
     name: req.body.name,
     email: req.body.email,
     password: hashedPassword,
+    animeList: [tmpAnime],
   });
   try {
     await user.save();
@@ -82,8 +92,6 @@ router.post("/login", async (req, res) => {
   );
 
   refreshTokens.push(refreshToken);
-
-  console.log(refreshTokens);
 
   res.json({ accessToken, refreshToken, msg: "Logged in successfully" });
   //res.send('Logzed in!');
